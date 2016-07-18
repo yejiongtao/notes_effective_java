@@ -1,0 +1,37 @@
+1. Always override hashCode when you override equals
+	equal objects must have equal hash codes
+	but producing distinct integer results for unequal objects may improve the performance of hash tables
+		a good sample
+			class C{
+				private boolean b;
+				private int i;
+				private long l;
+				private float f;
+				private double d;
+				private CC cc;
+				private int[] a;
+
+				@Override
+				public int hashCode(){
+					int result = 17;		// any number except 0, to make the first several elements effective even if they are 0
+					result = 31 * result + b ? 1 : 0;		// 31 is a prime, and the JVM will optimize it as 31 * i == (i << 5) - i
+					result = 31 * result + i;
+					result = 31 * result + (int)(l ^ (l >>> 32));	// ^ is exclusive OR, >>> is unsigned right shift
+					result = 31 * result + Float.floatToIntBits(f); // get the bits stored in the memory as an unsigned
+
+					long ll = Double.doubleToLongBits(d);
+					result = 31 * result + (int)(ll ^ (ll >>> 32));
+
+					result = 31 * result + cc.hashCode();
+					result = 31 * result + Arrays.hashCode(a);	// will take into account of each element
+					return result;
+				}
+			}
+
+
+
+
+
+
+
+

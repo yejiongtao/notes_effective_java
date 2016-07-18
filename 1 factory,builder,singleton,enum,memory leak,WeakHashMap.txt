@@ -1,0 +1,127 @@
+1. consider static factory methods instead of constructors
+	pros
+		static factory methods have names, so that it's clearer to use
+			and you can have two factory methods with same parameters, but creating different instance of this class
+		calling factory methods does not means creating a new instance
+			in this way, you can create immutable class, or reuse some instances to avoid duplication
+		factory methods can return an object of any subtype of their return type
+			useful when the implementation of the subtype is not important to the users
+	cons
+		classes without public or protected constructors cannot be subclassed
+			in other words, if you do not want others to subclass this, you make it this way
+			after all, it's better to perfer composition to inheritance, isn't it
+		it may take an effort for others to find out how to instantiate a class, because factory methods' name vary
+			usually we use getInstance, or newInstance as factory's name
+
+2. Consider a builder when faced with many constructor parameters
+	why?
+		the code instantiating an instance will be hard to understand
+			readers can't easily know what those parameters are
+		and several parameters of the same type may cause subtle bugs, e.g. the reversing of two of the parameters
+	JavaBeans Pattern
+		no-parameter constructor, set the fields using setters
+			but may be in an inconsistent state partway through its construction
+	sample code of Builder Pattern
+		class C{
+			private int i;
+			private int j;
+
+			private C(Builder builder){	// private
+				i = builder.i;
+				j = builder.j;
+			}
+
+			public static class Builder{
+				private int i;
+				private int j;
+
+				public Builder i(int val){	// to chain
+					i = val;
+					return this;
+				}
+				public Builder j(int val){
+					j = val;
+					return this;
+				}
+				public C build(){		// you can check the fields here, to avoid an inconsistent state partway
+					return new C(this);
+				}
+			}
+		}
+		C c = new C.Builder().i(1).j(2).build();
+
+3. Enforce the singleton property with a private constructor or an enum type
+	serialization of the singleton
+		provide a readResolve method. Otherwise, each time a serialized instance is deserialized, a new instance will be created
+			public class SingletonObject{
+				private static SingletonObject ref;
+
+				// the readResolve method allows a class to replace/resolve the object read from the stream before it is returned to the caller
+				private Object readResolve() {
+				    return ref;
+				}
+			}
+	another, could be a better, way to implement singleton
+		public enum SingletonObject {
+		    INSTANCE;
+
+		    public void f() { ... }
+		}
+		// this approach provides the serialization machinery for free
+	* enum in Java
+		public enum Day {
+		    SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY 
+		}
+		Day is a class, and SUNDAY is an object
+				Day day = SUNDAY;
+		there's only one SUNDAY globally
+			for(Day day: Day.values())
+				if(day == SUNDAY);
+		enum in Java is a all-featured class
+			public enum Planet {
+			    VENUS   (4.869e+24, 6.0518e6),
+			    EARTH   (5.976e+24, 6.37814e6);
+
+			    private final double mass;   // in kilograms
+			    private final double radius; // in meters
+			    Planet(double mass, double radius) {
+				this.mass = mass;
+				this.radius = radius;
+			    }
+			}
+
+4. Enforce noninstantiability with a private constructor
+	// Noninstantiable utility class
+	public class UtilityClass {
+	    // Suppress default constructor for noninstantiability
+	    private UtilityClass() {
+		throw new AssertionError();	// avoid instantiation within the class
+	    }
+	}
+
+5. Avoid creating unnecessary objects
+	An object can always be reused if it is immutable
+		e.g. String s = "hello", instead of String s = new String("hello")
+		Boolean b = Boolean.valueOf("true"), instead of b = new Boolean("true")
+	and do not overlook the overhead of creating objects
+		keep the object as a field if it's invariant, instead of creating it every time as a local variable
+		prefer primitives to boxed primitives, and watch out for unintentional autoboxing
+
+6. Eliminate obsolete object references
+	null out references once they become obsolete
+	but the best way to eliminate an obsolete reference is to let the variable that contained the reference fall out of scope
+		This occurs naturally if you define each variable in the narrowest possible scope
+	common sources of memory leak
+		when a class manages its own memory
+			e.g. for an enlargeable collection, remember to null out the obsolete references
+		caches
+			if you put an object in your own cache and forget to clean it when it's irrelevant
+			to avoid this, consider WeakHashMap
+		listeners and other callbacks
+			if you forget to deregister the callbacks explicitly
+			to avoid this, maybe you can store them only as keys in a WeakHashMap
+				but don't forget to keep a reference if you still need it
+	WeakHashMap
+		releases the key-value pair when there's no reference to the key
+		you can store the objects as keys, so that they will be released if there's no reference to them
+			you can implement your cache in this way to avoid memory leak

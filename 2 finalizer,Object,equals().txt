@@ -1,0 +1,120 @@
+1. Avoid finalizers
+	finalize()
+		Called by the garbage collector on an object when garbage collection determines that there are no more references to the object
+	unlike destructor in C++, finalizer in Java have unpredictable execution time
+		and it may not be executed at all
+		even System.gc and System.runFinalization do not guarantee it
+	so do not use finalizer
+	instead, you provide an explicit termination method, and require clients of the class to invoke this method on each instance when it is no longer needed
+		you keep track of whether it has been terminated
+		and throw an IllegalStateException if they are called after the object has been terminated
+		(such as close() method in InputStream, Connection)
+		(in JDK, InputStream and Connection, etc use finalizers, to terminate itself in case of client forgetting to call close(), but no guarantee)
+	Explicit termination methods are typically used in combination with the try-finally construct to ensure termination
+		Invoking the explicit termination method inside the finally clause
+	pay attention that you should manually call the superclass's finalizer, (if you decide to use finalizers)
+		otherwise the superclass's finalizer won't be called
+			@Override 
+			protected void finalize() throws Throwable {
+			    try {
+				... // Finalize subclass state
+			    } finally {
+				super.finalize();
+			    }
+			}
+		there's a trick to ensure the superclass's finalizer will be executed 
+			public class Foo {
+			   // Sole purpose of this object is to finalize outer Foo object
+			   private final Object finalizerGuardian = new Object() {
+			      @Override 
+			      protected void finalize() throws Throwable {
+				 ... // Finalize outer Foo object here
+			      }
+			   };
+			   ... 
+			}
+			// because as a field, finalizerGuardian will be ready to finalize at the same time as the enclosing instance of Foo
+			// and finalizerGuardian has access to the content of the enclosing Foo instance
+			// so just do the clean up of the enclosing Foo instance inside finalizerGuardian's finalizer
+
+2. methods of Object
+	protected Object clone()
+		copy this object to a new object from field to field
+			when a field is a reference to another instance, it just copies the reference
+			then two references point to the same instance
+		protected, so if you want to make a class cloneable
+			class C implements Cloneable{		// if you do not implements Cloneable, when you call super.clone(), CloneNotSupportedException throws
+				@Override
+				public Object clone() throws CloneNotSupportedException {	// ! you cannot reduce visibility, but you can increase it
+					return super.clone();			// Object.clone() is enough for shallow cloning
+				}						// if you want to do deep clone, modify it before returning
+			}
+	boolean equals(Object)
+		for Object, it returns true only when they refer to the same instance
+		override this if you want the instances of a class to be equal when their contents are equal or something
+			String.equals() are value comparison instead of reference comparison
+			List.equals() and Set.equals() are also value comparison
+				which means only when they have the same size and same elements, (same order for List), are they equal
+				but! Collection.equals() is still reference comparison
+			! do not forget to override hashCode(), because hashCode must be equal for equal objects
+		* if you don't override this method,
+			it will call super.equals(), all the way to Object.equals()
+			if C overrides equals(), D extends C and doesn't override equals()
+				then by default D's equals() calls super.equals(), which is C's equals()
+
+	int hashCode()
+		is supported for the benefit of hash tables such as those provided by HashMap
+		attention that by default the hashCode is calculated based on reference instead of value
+
+	protected void finalize()
+	final Class<?> getClass()
+		Returns the runtime class of this Object
+
+	String toString()
+	final void wait()
+		Causes the current thread to wait until another thread invokes the notify() method or the notifyAll() method for this object
+
+	final void notify()
+		Wakes up a single thread that is waiting on this object's monitor. 
+		If any threads are waiting on this object, one of them is chosen to be awakened.
+			The choice is arbitrary and occurs at the discretion of the implementation
+	final void notifyAll()
+		Wakes up all threads that are waiting on this object's monitor
+
+3. Obey the general contract when overriding equals
+	Reflexive
+		For any non-null reference value x, x.equals(x) must return true.
+	Symmetric
+		For any non-null reference values x and y, x.equals(y) must return true if and only if y.equals(x) returns true.
+	Transitive
+		For any non-null reference values x, y, z, if x.equals(y) returns true and y.equals(z) returns true, then x.equals(z) must return true.
+	Consistent
+		For any non-null reference values x and y, multiple invocations of x.equals(y) consistently return true or consistently return false, provided no information used in equals comparisons on the objects is modified.
+	For any non-null reference value x, x.equals(null) must return false.
+	*Attention
+		There is no way to extend an instantiable class and add a value component while preserving the equals contract
+			use composition instead of inheritance to accomplish equals()
+			(keep the instance of superclass as a field)
+	code of a good sample
+		class C{
+			private int i;
+			private float f;
+			private int[] a;
+			private D d;
+
+			@Override
+			public boolean equals(Object o){
+				if(o == this)	// a performance optimization that is worth doing if the comparison is potentially expensive
+					return true;
+				if(o instanceof C){
+					C c = (C)o;
+					return i == c.i &&
+						Math.abs(f - c.f) < EPSILSON &&		// use java.math.BigDecimal to represent big amount of money
+						Arrays.equals(a, c.a) &&		// value comparison
+						d == null ? c.d == null : d.equals(c.d);	// for those may be null
+				}
+			}
+		}
+	The performance of the equals method may be affected by the order in which fields are compared
+		For best performance, you should first compare fields that are more likely to differ, less expensive to compare, or, ideally, both
+
