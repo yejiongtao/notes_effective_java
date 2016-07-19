@@ -1,0 +1,134 @@
+1. java.math.BigDecimal
+	when dealing with money, you use BigDecimal instead of double, because
+		BigDecimal stores way more bits than double, so it's more precise
+		more importantly, you can specify the exact rounding method and the scale
+	to use
+		bd = new BigDecimal(1.5);	// it's exactly the decimal representation of the double's binary floating-point value, 1.49999999
+		bd = new BigDecimal("1.5");	// exactly 1.5, so use this
+		bd.setScale(scale, roundingMode);
+			scale is the number of digits after the decimal place
+			roundingMode
+				ROUND_CEILING
+					0.3 -> 1
+					-0.3 -> 0
+				ROUND_DOWN: to zero
+					0.3 -> 0
+					-0.3 -> 0
+				ROUND_FLOOR
+					0.3 -> 0
+					-0.3 -> -1
+				ROUND_HALF_UP: Round up if decimal >= .5
+				ROUND_HALF_DOWN: Round up if decimal > .5
+				ROUND_HALF_EVEN
+					when the rounding digit is 5, it will round down if the digit to the left of the 5 is even and up otherwise
+		bd = db.add(new BigDecimal("1.4"));
+			BigDecimal is immutable, so don't do this: db.add(new BigDecimal("1.4"));
+		comparison
+			If the scale is different, .equals() will return false, even if they are the same number mathematically.
+			compareTo() only compare the mathematical value
+		a.signum(); 
+			returns (-1 if a < 0), (0 if a == 0), (1 if a > 0)
+	more complicated function
+		check the doc if you're using it
+
+2. Always override hashCode when you override equals
+	equal objects must have equal hash codes
+	but producing distinct integer results for unequal objects may improve the performance of hash tables
+		a good sample
+			class C{
+				private boolean b;
+				private int i;
+				private long l;
+				private float f;
+				private double d;
+				private CC cc;
+				private int[] a;
+
+				@Override
+				public int hashCode(){
+					int result = 17;		// any number except 0, to make the first several elements effective even if they are 0
+					result = 31 * result + b ? 1 : 0;		// 31 is a prime, and the JVM will optimize it as 31 * i == (i << 5) - i
+					result = 31 * result + i;
+					result = 31 * result + (int)(l ^ (l >>> 32));	// ^ is exclusive OR, >>> is unsigned right shift
+					result = 31 * result + Float.floatToIntBits(f); // get the bits stored in the memory as an unsigned
+
+					long ll = Double.doubleToLongBits(d);
+					result = 31 * result + (int)(ll ^ (ll >>> 32));
+
+					result = 31 * result + cc.hashCode();
+					result = 31 * result + Arrays.hashCode(a);	// will take into account of each element
+					return result;
+				}
+			}
+
+3. Set in java
+	HashSet
+		implemented using a hash table
+		fast
+	TreeSet
+		implemented using a red-black tree
+		sorted, but slower than HashSet
+		ATTENTION! it's based on compareTo(), instead of hashCode and equals()
+	LinkedHashSet
+		implemented using a hash table, with a link going through it
+		fast, and save the insertion order
+
+4. Minimize the accessibility of classes and members
+	encapsulation decouples the modules that comprise a system, allowing them to be developed, tested, optimized, used, understood, and modified in isolation
+		a module with less accessibility makes modification easier, because less dependancy is there
+	accessibility
+		for top-level (non-nested) classes and interfaces, prefer package-private to public
+			public, if with 'public'
+			package-private, if without
+		for members (fields, methods, nested classes, nested interfaces)
+			private, with 'private'
+			package-private, without access modifier. Use this instead of public, if possible!
+			protected, accessible from subclasses, and from those in the same package
+			public
+		note that all members of an interface are implicitly public
+		instance fields should never be public
+			use getters and setters
+			if you need to provide a static list
+				private static final Thing[] PRIVATE_VALUES = { ... };
+				public static final List<Thing> VALUES = Collections.unmodifiableList(Arrays.asList(PRIVATE_VALUES));
+					// because although the references PRIVATE_VALUES is final, the instances can still be modified
+
+5. minimize mutability
+	to make a class immutable
+		Don't provide any methods that modify the object's state
+		Ensure that the class can't be extended
+			by making the class final
+			or, a better approach, to make the constructor package-private, and provide a static factory method
+				in this way, within the package, it's still extensible, so you can subclass them for your own use if neccesary
+				and outside the package, it's not extensible
+		Make all fields final
+		Make all fields private
+		Ensure exclusive access to any mutable components
+			If your class has any fields that refer to mutable objects, ensure that clients of the class cannot obtain references to these objects
+	functional approach vs. imperative approach
+		BigDecimal.add() does not modify the original object, but creat a new object as the result
+			this is a functional approach
+		an imperative/proceduaral approach changes the original value
+	Immutable objects are inherently thread-safe
+		they require no synchronization
+		so it's good to encourage clients to reuse existing instances wherever possible
+			e.g. provide public static final constants for frequently used values
+			or provide static factories that cache frequently requested instances to avoid creating new instances when existing ones would do
+				All the boxed primitive classes and BigInteger do this
+	you need not and should not provide a clone method or copy constructor on an immutable class
+	immutable objects make great map keys and set elements
+		when an object is put in a hash table, it stays in the bucket
+			if its field changes, and that affects its hashCode, then you cannot find it any more
+			so it's crucial to make sure that those you put into a hash table have immutable hashCodes
+				(equality is alright to change, because it looks up for the item after entering the correct bucket)
+	The only real disadvantage of immutable classes is that they require a separate object for each distinct value
+		e.g. to change one bit of BigInteger will create a new one, which can be costly
+			but it takes a little if you use BitSet, which is mutable
+		to overcome this, you can provide a mutable companion class
+			if you can accurately predict which complex multistage operations clients will want to perform on your immutable class
+				make the mutable companion class package-private, and deal with the operations unknowingly
+				e.g. BigInteger has this kind of approach to optimize operations
+			but if you do not
+				create a public mutable companion class, for clients to use
+				e.g. StringBuffer to String
+	

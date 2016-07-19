@@ -49,6 +49,8 @@
 					return super.clone();			// Object.clone() is enough for shallow cloning
 				}						// if you want to do deep clone, modify it before returning
 			}
+		you may just create a copy constructor or copy factory to avoid clone()
+
 	boolean equals(Object)
 		for Object, it returns true only when they refer to the same instance
 		override this if you want the instances of a class to be equal when their contents are equal or something
@@ -109,7 +111,7 @@
 				if(o instanceof C){
 					C c = (C)o;
 					return i == c.i &&
-						Math.abs(f - c.f) < EPSILSON &&		// use java.math.BigDecimal to represent big amount of money
+						Math.abs(f - c.f) < EPSILSON &&		// use java.math.BigDecimal to represent amount of money
 						Arrays.equals(a, c.a) &&		// value comparison
 						d == null ? c.d == null : d.equals(c.d);	// for those may be null
 				}
