@@ -117,9 +117,9 @@
 				All the boxed primitive classes and BigInteger do this
 	you need not and should not provide a clone method or copy constructor on an immutable class
 	immutable objects make great map keys and set elements
-		when an object is put in a hash table, it stays in the bucket
+		when an object is put in a hash set, it stays in the bucket
 			if its field changes, and that affects its hashCode, then you cannot find it any more
-			so it's crucial to make sure that those you put into a hash table have immutable hashCodes
+			so it's crucial to make sure that those you put into a hash set have immutable hashCodes
 				(equality is alright to change, because it looks up for the item after entering the correct bucket)
 	The only real disadvantage of immutable classes is that they require a separate object for each distinct value
 		e.g. to change one bit of BigInteger will create a new one, which can be costly
@@ -131,4 +131,6 @@
 			but if you do not
 				create a public mutable companion class, for clients to use
 				e.g. StringBuffer to String
-	
+	make every class final unless it needs to be mutable
+		make every field final unless it needs to be mutable
+

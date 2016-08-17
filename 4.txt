@@ -1,0 +1,15 @@
+1. instanceof vs getClass
+	c instanceof C
+		true even if c is an instance of one of C's subclasses
+	c.getClass() == C.class
+		ensure that c is exactly an instance of C
+
+2. Favor composition over inheritance
+	It is safe to use inheritance within a package, where the subclass and the superclass implementations are under the control of the same programmers.
+		It is also safe to use inheritance when extending classes specifically designed and documented for extension
+	Inheriting from ordinary concrete classes across package boundaries, however, is dangerous
+		for example, do not override HashSet, String or something
+	use the Decorator Pattern to add features to them
+
+3. Design and document for inheritance or else prohibit it
+
