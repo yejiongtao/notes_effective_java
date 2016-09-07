@@ -1,0 +1,83 @@
+1. Apache Commons EqualsBuilder, HashCodeBuilder
+	followed the approach in Bloch's Effective Java
+	not using reflection
+		@Override
+		public int hashCode() {
+			return new HashCodeBuilder()
+			 .append(this.id)
+			 .append(this.name)
+			 .toHashCode();
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (obj instanceof SimpleDataExample == false) {
+				return false;
+			}
+			if (this == obj) {
+				return true;
+			}
+			final SimpleDataExample otherObject = (SimpleDataExample) obj;
+
+			return new EqualsBuilder()
+			 .append(this.id, otherObject.id)
+			 .append(this.name, otherObject.name)
+			 .isEquals();
+		}
+	you can use refection
+		HashCodeBuilder.reflectionHashCode()...
+
+2. Apache Commons ToStringBuilder
+	toString() is a powerful technique in debugging and troubleshooting
+	@Override
+	public String toString() {
+		return ToStringBuilder.reflectionToString(this);		// you can give an object to other class to it as well, if necessary
+			// by default, it does not include statics or transients
+			// it prints out others, including array, Map, enum, null value, etc
+
+		// if this class is subclassing other class, then its parent's member will also be printed
+			even including the parent's private field
+
+		RefectionToStringBuilder reflectionToStringBuilder = new ReflectionToStringBuilder();
+		reflectionToStringBuilder.setAppendStatics(true);		// include statics
+		reflectionToStringBuilder.setAppendTransients(true);
+		reflectionToStringBuilder.setExcludeFieldNames( new String[]{ "mName" });	// exclude some fields
+		return reflectionToStringBuilder.toString();
+
+		// or, maybe in some cases, you want to explicitly implement it
+		return new ToStringBuilder(this)
+			.append("mName", this.mName)
+			.append("mList", this.mList)
+			.append(this.mMap)		// name can be intentionally not specified
+			.toString();
+		// compared to writing toString() by yourself, this has advantages when dealing with lists, maps, null values
+
+		// customize your own style
+		final StandardToStringStyle style = new StandardToStringStyle();
+		style.setNullText("---NULL---");
+		style.setFieldSeparator(";");
+		style.setArrayStart("{{{");
+		style.setArrayEnd("}}}");
+		style.setArraySeparator("|");
+		style.setFieldNameValueSeparator(":");
+		return ToStringBuilder.reflectionToString(this, style);
+	}
+
+3. CodeGen in NetBeans
+	Alt + Insert
+	also following the approach in Effective Java
+		but not using reflection, so if you add a new field, you should regenerate the toString(), equals(), hashCode()
+	drawbacks of refection
+		slow, and may be tricky using along with a security manager
+
+4. BIO, NIO, AIO
+	synchronous vs asynchronous
+		synchronous means the IO is returned by the same method you called to ask for IO
+		asynchronous means you return as soon as you finish asking for IO
+			when the IO is ready, you'll be notified. (it's like callback)
+
+	BIO: blocking, synchronous
+	NIO: non-blocking, synchronous
+		you have to check for IO every now and then
+	AIO: non-blocking, asynchronous
+		you ask for it, and then will be notified when it's ready
+

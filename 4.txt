@@ -12,4 +12,55 @@
 	use the Decorator Pattern to add features to them
 
 3. Design and document for inheritance or else prohibit it
+	the class must document its self-use of overridable methods, so that the effect of overriding a method would be clear
+		(by overridable, we mean nonfinal, and either public or protected)
+		for each methods, the documentation must indicate which overridable methods this method invokes
+			and how the results of each invocation affect subsequent processing
+		sometimes you will need to make some fields protected, in order to make a method overridable
+	when you document a class as subclassable, you must assume it to be widely used
+		so the implementation pattern you exposed shouldn't change
+	constructors should not invoke overridable methods, directly or indirectly
+		cuz superclass contructor gets invoked defore subclass'
+			if an overriden method depends on some initialization in the subclass' constructor, then problem arises
+		and since clone() in Cloneable, readObject() in Serializable behaves like contructors
+			so don't invoke overridable methods in those either
+	how to prohibit subclassing
+		make the class final
+		make all constructors private or package-private, use static factory method instead
+
+4. prefer interfaces to abstract classes
+		cuz a class can implement multiple interfaces
+			so interfaces are ideal for defining some optional functionalities
+		and using interfaces, you allow others to use the Decorator Pattern to add feature to your class
+	provide an abstract skeletal implementation class to go with each nontrivial interface
+		in this way, you have both the flexibility of the interfaces, and the implementation assistance to programmers of the abstract classes
+		this approach is widely used in JDK and libraries like Spring, etc
+			e.g. abstract class AbstractList for interface List
+		if you want to add a method to a released interface, you can't do that without causing lots of problem
+			but you can add a concrete method to the related abstract skeletal class with a reasonable default implementation
+	if neccesary, provide a SIMPLE implementation
+		it's for inheritance, but not abstract
+
+5. use interfaces only to define types, not to export constants
+	some may define an interface with no methods but some static constants
+		but exporting constants in this way will leak the implementation detail
+		and will pollute the name space of all the subclasses of the one implements this interface
+	to export constants
+		make them private static fields if they are strongly tied to a class or interface
+		create a utility class for them (a class consisting of only public static constants)
+			and you can use the static import facility to avoid typing the utility class' name every time
+				import static com.jioye.MyConstants.*;
+
+6. prefer class hierarchies to tagged classes
+	 tagged classes
+		a class whose instances come in multiple flavors and contain a tag field indicating the flavor of the instance
+		using this approach
+			the class is hard to extend, because you have to change all the switch-cases
+			and it depends on the user to choose a tag, so it's not safe
+	instead, you always use class hierarchies
+		this looks like the State Pattern, using a class to represent a state, instead of a tag
+
+7. use function objects to represent strategies
+	actually it's Strategy Pattern
+		
 
